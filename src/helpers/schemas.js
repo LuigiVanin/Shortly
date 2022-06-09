@@ -12,4 +12,14 @@ const signInSchema = Joi.object({
     password: Joi.string().required(),
 });
 
-export { signUpSchema, signInSchema };
+const postUrlSchema = Joi.object({
+    url: Joi.string()
+        .pattern(/^http(s)?:\/\//)
+        .required(),
+});
+
+const authSchema = Joi.string()
+    .pattern(/^Bearer /)
+    .required();
+
+export { signUpSchema, signInSchema, postUrlSchema, authSchema };

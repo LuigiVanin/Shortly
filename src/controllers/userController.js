@@ -1,6 +1,7 @@
 import db from "../database.js";
 import bcrypt from "bcrypt";
 import { v4 as uuid } from "uuid";
+import { refactResult } from "../helpers/utils.js";
 
 class UserController {
     static createUser = async (req, res) => {
@@ -51,6 +52,46 @@ class UserController {
                 [token, user.rows[0].id]
             );
             return res.status(200).send({ token });
+        } catch (err) {
+            console.log(err);
+            if (err.name === "error" && err.table) {
+                return res.status(422).send({ details: err.detail });
+            }
+            return res.sendStatus(500);
+        }
+    };
+
+    static getUrlsByUser = async (req, res) => {
+        const { id: userId } = req.params;
+        try {
+            let result = await db.query(
+                `
+            SELECT users.id as id, users.name, urls.id as "urlId",urls.url, urls.shorten as "shortUrl" , urls.views 
+            FROM users
+            JOIN urls ON urls."userId" = users.id
+            WHERE users.id = $1
+            `,
+                [userId]
+            );
+            if (!result.rowCount) {
+                const user = await db.query(
+                    `
+                SELECT id, name FROM users WHERE id = $1;
+                `,
+                    [userId]
+                );
+                if (!user.rowCount)
+                    return res
+                        .status(404)
+                        .send({ message: "Não existe usuário com esse id!" });
+
+                return res.send({
+                    ...user.rows[0],
+                    visitedCount: 0,
+                    shortnedUrls: [],
+                });
+            }
+            return res.status(200).send(refactResult(result.rows));
         } catch (err) {
             console.log(err);
             if (err.name === "error" && err.table) {
