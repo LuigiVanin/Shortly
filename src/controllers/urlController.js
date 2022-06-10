@@ -84,6 +84,47 @@ class UrlController {
             return res.sendStatus(500);
         }
     };
+
+    static deleteUrl = async (req, res) => {
+        const { id: urlId } = req.params;
+        const { id: userId } = res.locals.user;
+        console.log(urlId, userId);
+        try {
+            const result = await db.query(
+                `
+            SELECT urls."id", urls."userId" 
+            FROM urls 
+            WHERE urls.id = $1;
+            `,
+                [urlId]
+            );
+            console.log(result.rows);
+            if (!result.rowCount)
+                return res
+                    .status(404)
+                    .send({ message: "id de url inexistente!" });
+
+            if (result.rows[0].userId != userId)
+                return res.status(401).send({
+                    message:
+                        "somente usuários autorizados podem deletar esse recurso",
+                });
+            await db.query(
+                `
+            DELETE FROM urls
+            WHERE urls."userId" = $1 and urls.id = $2
+            `,
+                [userId, urlId]
+            );
+            return res.status(204).send({ message: "recurso deletado" });
+        } catch (err) {
+            console.log(err);
+            if (err.name === "error" && err.table) {
+                return res.status(422).send({ details: err.detail });
+            }
+            return res.sendStatus(500);
+        }
+    };
 }
 
 export default UrlController;

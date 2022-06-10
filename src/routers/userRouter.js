@@ -17,5 +17,6 @@ userRouter.post(
     UserController.signIn
 );
 userRouter.get("/users/:id", authentication, UserController.getUrlsByUser);
+userRouter.get("/ranking", UserController.getRanking);
 
 export default userRouter;

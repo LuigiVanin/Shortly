@@ -100,6 +100,27 @@ class UserController {
             return res.sendStatus(500);
         }
     };
+
+    static getRanking = async (req, res) => {
+        try {
+            const result = await db.query(`
+            SELECT users.id, users.name, users.email, COUNT(urls.id) as "linksCount", SUM(COALESCE(urls.views, 0)) as "visitCount"
+            FROM users
+            LEFT JOIN urls ON urls."userId" = users.id
+            GROUP BY users.name, users.email, users.id
+            ORDER BY "visitCount" DESC
+            LIMIT 10
+            `);
+
+            return res.status(200).send(result.rows);
+        } catch (err) {
+            console.log(err);
+            if (err.name === "error" && err.table) {
+                return res.status(422).send({ details: err.detail });
+            }
+            return res.sendStatus(500);
+        }
+    };
 }
 
 export default UserController;
